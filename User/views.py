@@ -5,7 +5,7 @@ from .forms import UserLoginForm, UserRegisterForm, ProfileForm
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 from django.contrib.auth.models import User
-import json
+from django.db.models import Q
 
 # Create your views here.
 
@@ -18,19 +18,15 @@ def index(request):
 # 用户登录
 def user_login(request):
     if request.method == 'POST':
-        user_login_form = UserLoginForm(data=request.POST)
-        if user_login_form.is_valid():
-            data = user_login_form.cleaned_data
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-            user = authenticate(username=data['username'], password=data['password'])
-            if user:
-                login(request, user)
-                context = {'user': user}
-                return JsonResponse(context, safe=False)
-            else:
-                return JsonResponse("Wrong password or wrong username!", safe=False)
+        user = authenticate(username, password)
+        if user:
+            login(request,user)
+            return JsonResponse("Login Success!", safe=False)
         else:
-            return JsonResponse("Invalid input", safe=False)
+            return JsonResponse("账号或密码输入有误。请重新输入!")
     else:
         return JsonResponse("Invalid method", safe=False)
 
@@ -44,18 +40,18 @@ def user_logout(request):
 # 用户注册
 def user_register(request):
     if request.method == 'POST':
-        user_register_form = UserRegisterForm(data=request.POST)
-        if user_register_form.is_valid():
-            new_user = user_register_form.save(commit=False)
-            # 设置密码
-            new_user.set_password(user_register_form.cleaned_data['password'])
-            new_user.save()
-            # 保存好数据后 登录并返回主页面
-            login(request, new_user)
-            context = {'user': new_user}
-            return JsonResponse(context, safe=False)
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+        if password != password2:
+            return JsonResponse("两次密码不一致，请重新填写!", safe=False)
         else:
-            return JsonResponse("Invalid form, please try again!", safe=False)
+            exist = User.objects.get(Q(username=username) | Q(email=email))
+            if exist:
+                return JsonResponse("用户名或邮箱已存在!")
+            else:
+                User.objects.create_user(username=username, password=password, email=email)
     else:
         return JsonResponse("Invalid method", safe=False)
 
