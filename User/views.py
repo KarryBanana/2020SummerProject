@@ -1,21 +1,22 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .forms import UserLoginForm, UserRegisterForm, ProfileForm
 from django.contrib.auth.decorators import login_required
 from .models import Profile
 from django.contrib.auth.models import User
+import json
 
 # Create your views here.
 
+
 # 主页面
 def index(request):
-    return render(request, 'index.html')
+    return JsonResponse("主页", safe=False)
 
 
 # 用户登录
 def user_login(request):
-    print(request.method)
     if request.method == 'POST':
         user_login_form = UserLoginForm(data=request.POST)
         if user_login_form.is_valid():
@@ -24,23 +25,20 @@ def user_login(request):
             user = authenticate(username=data['username'], password=data['password'])
             if user:
                 login(request, user)
-                return render(request, 'index.html', user)
+                context = {'user': user}
+                return JsonResponse(context, safe=False)
             else:
-                return HttpResponse("账号或密码输入有误。请重新输入!")
+                return JsonResponse("Wrong password or wrong username!", safe=False)
         else:
-            return HttpResponse("账号或密码输入不合法")
-    elif request.method == 'GET':
-        user_login_form = UserLoginForm()
-        context = {'form': user_login_form}
-        return render(request, 'login.html', context)
+            return JsonResponse("Invalid input", safe=False)
     else:
-        return HttpResponse("请使用GET或POST请求数据")
+        return JsonResponse("Invalid method", safe=False)
 
 
 # 用户登出
 def user_logout(request):
     logout(request)
-    return render(request, 'index.html')
+    return JsonResponse("Logout Successfully!", safe=False)
 
 
 # 用户注册
@@ -54,15 +52,12 @@ def user_register(request):
             new_user.save()
             # 保存好数据后 登录并返回主页面
             login(request, new_user)
-            return render(request, 'index.html')
+            context = {'user': new_user}
+            return JsonResponse(context, safe=False)
         else:
-            return HttpResponse("注册表单输入有误。请重新输入!")
-    elif request.method == 'GET':
-        user_register_form = UserRegisterForm()
-        context = { 'form': user_register_form }
-        return render(request, 'register.html', context)
+            return JsonResponse("Invalid form, please try again!", safe=False)
     else:
-        return HttpResponse("请使用GET或POST请求数据")
+        return JsonResponse("Invalid method", safe=False)
 
 
 @login_required(login_url='/User/login/')
