@@ -20,13 +20,12 @@ def user_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-
-        user = authenticate(username, password)
+        user = authenticate(username=username, password=password)
         if user:
-            login(request,user)
+            login(request, user)
             return JsonResponse("Login Success!", safe=False)
         else:
-            return JsonResponse("账号或密码输入有误。请重新输入!")
+            return JsonResponse("账号或密码输入有误。请重新输入!", safe=False)
     else:
         return JsonResponse("Invalid method", safe=False)
 
@@ -41,17 +40,17 @@ def user_logout(request):
 def user_register(request):
     if request.method == 'POST':
         username = request.POST.get('username')
-        email = request.POST.get('email')
         password = request.POST.get('password')
         password2 = request.POST.get('password2')
         if password != password2:
             return JsonResponse("两次密码不一致，请重新填写!", safe=False)
         else:
-            exist = User.objects.get(Q(username=username) | Q(email=email))
-            if exist:
-                return JsonResponse("用户名或邮箱已存在!")
-            else:
-                User.objects.create_user(username=username, password=password, email=email)
+            try:
+                exist = User.objects.get(Q(username=username))
+                return JsonResponse("用户名或邮箱已存在!", safe=False)
+            except User.DoesNotExist:
+                User.objects.create_user(username=username, password=password)
+                return JsonResponse("成功", safe=False)
     else:
         return JsonResponse("Invalid method", safe=False)
 
