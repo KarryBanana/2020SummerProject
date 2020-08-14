@@ -1,3 +1,2 @@
-# midterm-project
-a new repository for midterm project
-=======
+# midterm_project_backend
+a new repository for backend submit
